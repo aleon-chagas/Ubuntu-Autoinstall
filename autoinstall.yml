@@ -1,0 +1,150 @@
+#cloud-config
+autoinstall:
+  version: 1
+  identity:
+    hostname: ubuntu
+    username: "aleon"
+    password: "$6$pNFMkWL8/yWYibG4$0JID/YKlojDk2iYLuLHEwbbkFazt03pX47Opg/vuU4k/LTKgIM4pcMGOlkMYfK9yA1hAaSnkK7YLaYtkPbPsu/"
+  locale: pt_BR.UTF-8
+  keyboard:
+    layout:
+      - br
+      - us
+    variant:
+      - abnt2
+      - intl
+    toggle: alt_shift
+  timezone: "America/Sao_Paulo"
+  network:
+    version: 2
+    ethernets:
+      eth0:
+        dhcp4: true
+  packages:
+    - apt-transport-https
+    - ca-certificates
+    - curl
+    - gnupg
+    - lsb-release
+    - software-properties-common
+    - nala
+    - gpg
+    - build-essential
+    - wget
+    - vim
+    - git
+    - jq
+    - httpie
+    - htop
+    - iftop
+    - iotop
+    - glances
+    - ncdu
+    - tree
+    - bash-completion
+    - zsh
+    - plocate
+    - mtr
+    - nmap
+    - neofetch
+    - net-tools
+    - unzip
+    - tmux
+    - dnsutils
+    - btop
+    - tilix
+    - speedtest-cli
+    - mysql-client
+    - ansible-lint
+    - fonts-powerline
+    - fonts-firacode
+    - fzf
+    - command-not-found
+    - util-linux
+    - obs-studio
+    - flameshot
+    - virtualbox
+    - whois
+    - gnome-shell-extensions
+  codecs:
+    install: true
+  drivers:
+    install: true
+  late-commands:
+    # Docker setup
+    - curtin in-target --target=/target mkdir -p /etc/apt/keyrings
+    - curtin in-target --target=/target bash -c "curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg"
+    - curtin in-target --target=/target bash -c "echo 'deb [arch=amd64 signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable' > /etc/apt/sources.list.d/docker.list"
+    - curtin in-target --target=/target apt-get update
+    - curtin in-target --target=/target apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin docker-buildx-plugin
+    - curtin in-target --target=/target systemctl enable docker
+    - curtin in-target --target=/target usermod -aG docker aleon
+
+    # Kubernetes tools
+    - curtin in-target --target=/target bash -c "curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key -o /etc/apt/keyrings/kubernetes-apt-keyring.asc"
+    - curtin in-target --target=/target bash -c "echo 'deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.asc] https://pkgs.k8s.io/core:/stable:/v1.29/deb/ /' > /etc/apt/sources.list.d/kubernetes.list"
+    - curtin in-target --target=/target apt-get update
+    - curtin in-target --target=/target apt-get install -y kubectl
+    - curtin in-target --target=/target bash -c "curl -L https://github.com/derailed/k9s/releases/latest/download/k9s_linux_amd64.deb -o /tmp/k9s_linux_amd64.deb"
+    - curtin in-target --target=/target apt-get install -y /tmp/k9s_linux_amd64.deb
+    - curtin in-target --target=/target rm -f /tmp/k9s_linux_amd64.deb
+    - curtin in-target --target=/target curl -L https://github.com/ahmetb/kubectx/releases/latest/download/kubectx -o /usr/local/bin/kubectx && chmod +x /usr/local/bin/kubectx
+    - curtin in-target --target=/target curl -L https://github.com/ahmetb/kubectx/releases/latest/download/kubens -o /usr/local/bin/kubens && chmod +x /usr/local/bin/kubens
+    - curtin in-target --target=/target curl -L https://github.com/kubernetes/minikube/releases/latest/download/minikube-linux-amd64 -o /usr/local/bin/minikube && chmod +x /usr/local/bin/minikube
+
+    # DevOps Tools (PowerShell, Azure CLI, AWS CLI, Terraform, yq, Vagrant)
+    - curtin in-target --target=/target bash -c "curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /etc/apt/keyrings/microsoft.gpg"
+    - curtin in-target --target=/target bash -c "echo 'deb [arch=amd64 signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/ubuntu/24.04/prod noble main' > /etc/apt/sources.list.d/powershell.list"
+    - curtin in-target --target=/target apt-get update
+    - curtin in-target --target=/target apt-get install -y powershell
+    - curtin in-target --target=/target bash -c "curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash"
+    - curtin in-target --target=/target bash -c "curl -s 'https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip' -o /tmp/awscliv2.zip && unzip -q -o /tmp/awscliv2.zip -d /tmp/aws-cli-install && /tmp/aws-cli-install/aws/install --update && rm -rf /tmp/awscliv2.zip /tmp/aws-cli-install"
+    - curtin in-target --target=/target bash -c "curl -fsSL https://apt.releases.hashicorp.com/gpg | gpg --dearmor -o /etc/apt/keyrings/hashicorp.gpg"
+    - curtin in-target --target=/target bash -c "echo 'deb [arch=amd64 signed-by=/etc/apt/keyrings/hashicorp.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main' > /etc/apt/sources.list.d/hashicorp.list"
+    - curtin in-target --target=/target apt-get update
+    - curtin in-target --target=/target apt-get install -y terraform
+    - curtin in-target --target=/target curl -L https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -o /usr/local/bin/yq && chmod +x /usr/local/bin/yq
+    - curtin in-target --target=/target curl -L https://releases.hashicorp.com/vagrant/2.4.1/vagrant_2.4.1-1_amd64.deb -o /tmp/vagrant.deb
+    - curtin in-target --target=/target apt-get install -y /tmp/vagrant.deb
+    - curtin in-target --target=/target rm -f /tmp/vagrant.deb
+
+    # Desktop apps (Thunderbird, Sublime, Chrome, Remote Desktop Manager, Zoom)
+    - curtin in-target --target=/target apt-get install -y thunderbird
+    - curtin in-target --target=/target bash -c "curl -fsSL https://download.sublimetext.com/sublimehq-pub.gpg | gpg --dearmor -o /etc/apt/keyrings/sublimehq.gpg"
+    - curtin in-target --target=/target bash -c "echo 'deb [signed-by=/etc/apt/keyrings/sublimehq.gpg] https://download.sublimetext.com/ apt/stable/' > /etc/apt/sources.list.d/sublime-text.list"
+    - curtin in-target --target=/target apt-get update
+    - curtin in-target --target=/target apt-get install -y sublime-text
+    - curtin in-target --target=/target bash -c "curl -fsSL https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor -o /etc/apt/keyrings/google-chrome.gpg"
+    - curtin in-target --target=/target bash -c "echo 'deb [arch=amd64 signed-by=/etc/apt/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main' > /etc/apt/sources.list.d/google-chrome.list"
+    - curtin in-target --target=/target apt-get update
+    - curtin in-target --target=/target apt-get install -y google-chrome-stable
+    - curtin in-target --target=/target bash -c "if [ ! -f /usr/bin/rdm-free ]; then curl -L 'https://cdn.devolutions.net/download/Linux/RDM/2025.2.1.4/RemoteDesktopManager_2025.2.1.4_amd64.deb' -o /tmp/rdm.deb && apt-get install -y /tmp/rdm.deb && rm -f /tmp/rdm.deb; fi"
+    - curtin in-target --target=/target bash -c "if [ ! -f /usr/bin/zoom ]; then apt-get install -y libxcb-xtest0 libxcb-cursor0; curl -L https://zoom.us/client/latest/zoom_amd64.deb -o /tmp/zoom.deb && apt-get install -y /tmp/zoom.deb && rm -f /tmp/zoom.deb; fi"
+
+    # Vivaldi installation
+    - curtin in-target --target=/target mkdir -p /etc/apt/keyrings
+    - curtin in-target --target=/target bash -c "curl -fsSL https://repo.vivaldi.com/stable/linux_signing_key.pub | gpg --dearmor -o /etc/apt/keyrings/vivaldi-browser.gpg"
+    - curtin in-target --target=/target bash -c "echo 'deb [arch=amd64 signed-by=/etc/apt/keyrings/vivaldi-browser.gpg] http://repo.vivaldi.com/stable/deb/ stable main' > /etc/apt/sources.list.d/vivaldi.list"
+    - curtin in-target --target=/target apt-get update
+    - curtin in-target --target=/target apt-get install -y vivaldi-stable
+
+    # Apps via apt and snap
+    - curtin in-target --target=/target bash -c "curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /etc/apt/keyrings/microsoft.gpg"
+    - curtin in-target --target=/target bash -c "echo 'deb [arch=amd64 signed-by=/etc/apt/keyrings/microsoft.gpg] https://packages.microsoft.com/repos/code stable main' > /etc/apt/sources.list.d/vscode.list"
+    - curtin in-target --target=/target apt-get update
+    - curtin in-target --target=/target apt-get install -y code
+    - curtin in-target --target=/target snap install slack --classic
+    - curtin in-target --target=/target snap install teams-for-linux --classic
+    - curtin in-target --target=/target snap install notion-desktop
+    - curtin in-target --target=/target snap install storage-explorer
+    - curtin in-target --target=/target snap install bitwarden
+
+    # User environment tweaks
+    - curtin in-target --target=/target update-alternatives --set x-terminal-emulator /usr/bin/tilix.wrapper
+    - curtin in-target --target=/target -u aleon bash -c "CHSH=no RUNZSH=no sh -c \"$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)\" '' --unattended"
+    - curtin in-target --target=/target usermod -s /bin/zsh aleon
+
+    # Final cleanup
+    - curtin in-target --target=/target updatedb
+    - curtin in-target --target=/target apt-get autoclean -y
+    - curtin in-target --target=/target apt-get autoremove -y
